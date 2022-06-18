@@ -1,7 +1,7 @@
 package com.example.pets;
 
 import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.Menu;
@@ -89,20 +89,18 @@ public class EditorActivity extends AppCompatActivity {
         String breedString = mBreedEditText.getText().toString().trim();
         Integer weightInteger = Integer.parseInt(mWeightEditText.getText().toString().trim());
 
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-
         ContentValues values = new ContentValues();
         values.put(PetEntry.COLUMN_PET_NAME, nameString);
         values.put(PetEntry.COLUMN_PET_BREED, breedString);
         values.put(PetEntry.COLUMN_PET_GENDER, mGender);
         values.put(PetEntry.COLUMN_PET_WEIGHT, weightInteger);
 
-        long newRowID = db.insert(PetEntry.TABLE_NAME, null, values);
+        Uri uri = getContentResolver().insert(PetEntry.CONTENT_URI, values);
 
-        if (newRowID == -1) {
-            Toast.makeText(getApplicationContext(), "Error with saving pet", Toast.LENGTH_SHORT).show();
+        if (uri != null) {
+            Toast.makeText(this, R.string.data_saved, Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(getApplicationContext(), "Pet saved with id: " + newRowID, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.data_not_saved, Toast.LENGTH_SHORT).show();
         }
 
 

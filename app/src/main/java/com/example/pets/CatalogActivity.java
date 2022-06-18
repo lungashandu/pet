@@ -3,13 +3,13 @@ package com.example.pets;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -53,7 +53,7 @@ public class CatalogActivity extends AppCompatActivity {
      */
     private void displayDatabaseInfo() {
         // Create and/or open a database to read from it
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        //SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         String[] projection = {
                 PetEntry._ID,
@@ -63,18 +63,20 @@ public class CatalogActivity extends AppCompatActivity {
                 PetEntry.COLUMN_PET_WEIGHT
         };
 
-        String selection = PetEntry.COLUMN_PET_GENDER + "=?";
-        String[] selectionArgs = {"1"};
+        /** Cursor cursor = db.query(
+         PetEntry.TABLE_NAME,
+         projection,
+         null,
+         null,
+         null,
+         null,
+         null
+         );
+         */
 
-        Cursor cursor = db.query(
-                PetEntry.TABLE_NAME,
-                projection,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                null
-        );
+        // Perform a query on the provider using the ContentResolver
+        // Use the PetEntry.CONTENT_URI to access the pet data
+        Cursor cursor = getContentResolver().query(PetEntry.CONTENT_URI, projection, null, null, null);
 
         TextView displayView = findViewById(R.id.text_view_pet);
 
@@ -121,17 +123,20 @@ public class CatalogActivity extends AppCompatActivity {
     }
 
     private void insertPet() {
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put(PetEntry.COLUMN_PET_NAME, "Toto");
-        values.put(PetEntry.COLUMN_PET_BREED, "Terrier");
+        values.put(PetEntry.COLUMN_PET_NAME, "Tommy");
+        values.put(PetEntry.COLUMN_PET_BREED, "Pomeranian");
         values.put(PetEntry.COLUMN_PET_GENDER, PetEntry.GENDER_MALE);
-        values.put(PetEntry.COLUMN_PET_WEIGHT, 7);
+        values.put(PetEntry.COLUMN_PET_WEIGHT, 4);
 
-        long newRowID = db.insert(PetEntry.TABLE_NAME, null, values);
+        Uri uri = getContentResolver().insert(PetEntry.CONTENT_URI, values);
 
-        Log.v("CatalogActivity", "New row ID " + newRowID);
+        if (uri != null) {
+            Toast.makeText(this, R.string.data_saved, Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, R.string.data_not_saved, Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
