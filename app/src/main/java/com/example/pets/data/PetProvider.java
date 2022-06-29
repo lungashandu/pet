@@ -89,6 +89,9 @@ public class PetProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Cannot query unknown Uri " + uri);
         }
+
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+
         return cursor;
     }
 
@@ -163,6 +166,8 @@ public class PetProvider extends ContentProvider {
             return null;
         }
 
+        getContext().getContentResolver().notifyChange(uri, null);
+
         // Once we know the ID of the new row in the table,
         // return the new URI with the ID appended to the end of it
         return ContentUris.withAppendedId(uri, id);
@@ -177,18 +182,28 @@ public class PetProvider extends ContentProvider {
         SQLiteDatabase database = mDbHelper.getWritableDatabase();
 
         final int match = sUriMatcher.match(uri);
+        int deletedRows;
         switch (match) {
             case PETS:
                 // Delete all rows that match the selection and selectionArgs
-                return database.delete(PetContract.PetEntry.TABLE_NAME, selection, selectionArgs);
+                deletedRows = database.delete(PetContract.PetEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+
             case PET_ID:
                 // Delete a single row given by the ID the URI
                 selection = PetContract.PetEntry._ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                return database.delete(PetContract.PetEntry.TABLE_NAME, selection, selectionArgs);
+                deletedRows = database.delete(PetContract.PetEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);
         }
+
+        if (deletedRows != 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return deletedRows;
     }
 
     /**
@@ -253,7 +268,17 @@ public class PetProvider extends ContentProvider {
         //Otherwise, get writeable database to update the data
         SQLiteDatabase database = mDbHelper.getWritableDatabase();
 
+        // Perform the update on the database and get the number of rows affected
+        int updatedRows = database.update(PetContract.PetEntry.TABLE_NAME, values, selection, selectionArgs);
+        ;
+
+        // If 1 or more rows were updated, then notify all listeners that the data at the
+        // given URI has changed
+        if (updatedRows != 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
         //Returns the number of databases rows affected by the update statement
-        return database.update(PetContract.PetEntry.TABLE_NAME, values, selection, selectionArgs);
+        return updatedRows;
     }
 }
